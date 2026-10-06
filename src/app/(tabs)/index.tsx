@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+
+import {
+  mintaIzinLokasi,
+  ambilKoordinatSaatIni,
+} from "../../services/locationService";
+
 import {
   ActivityIndicator,
   Button,
@@ -6,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AtribusiCuaca from "../../../components/AtribusiCuaca";
@@ -13,15 +20,14 @@ import SearchBox from "../../components/SearchBox";
 import WeatherCard from "../../components/WeatherCard";
 
 import { useDebounce } from "../../hooks/use-debounce";
-
 import { cariKota } from "../../services/geocodingService";
 import { ambilKualitasUdara } from "../../services/airQualityService";
 import { ambilCuaca } from "../../services/weatherService";
 import { konversiTingkatAQI } from "../../services/weatherAdapter";
-
 import { labelKodeCuaca } from "../../constants/weatherCodes";
 
 import { HasilGeocoding } from "../../types/geocoding";
+
 import {
   DataCuacaLengkap,
   DataKualitasUdara,
@@ -34,11 +40,13 @@ export default function HalamanUtama() {
     useState<HasilGeocoding | null>(null);
 
   const [cuaca, setCuaca] = useState<DataCuacaLengkap | null>(null);
+
   const [kualitasUdara, setKualitasUdara] =
     useState<DataKualitasUdara | null>(null);
 
   const [sedangMemuat, setSedangMemuat] = useState(false);
   const [pesanError, setPesanError] = useState<string | null>(null);
+  const [pesanLokasi, setPesanLokasi] = useState<string | null>(null);
 
   const teksTertunda = useDebounce(teksCari, 500);
 
@@ -92,6 +100,37 @@ export default function HalamanUtama() {
     }
   }
 
+  // Menggunakan lokasi perangkat saat ini
+  async function gunakanLokasiSaatIni() {
+    const status = await mintaIzinLokasi();
+
+    if (status === "denied") {
+      setPesanLokasi(
+        "Izin lokasi ditolak. Silakan cari kota secara manual di atas.",
+      );
+      return;
+    }
+
+    if (status === "unavailable") {
+      setPesanLokasi(
+        "Layanan lokasi tidak aktif di perangkat ini. Silakan cari kota secara manual.",
+      );
+      return;
+    }
+
+    setPesanLokasi(null);
+
+    const koordinat = await ambilKoordinatSaatIni();
+
+    pilihKota({
+      id: -1,
+      name: "Lokasi Saat Ini",
+      latitude: koordinat.latitude,
+      longitude: koordinat.longitude,
+      country: "",
+    });
+  }
+
   return (
     <SafeAreaView
       style={{
@@ -101,6 +140,17 @@ export default function HalamanUtama() {
       }}
     >
       <SearchBox onCari={setTeksCari} />
+
+      <Button
+        title="Gunakan Lokasi Saat Ini"
+        onPress={gunakanLokasiSaatIni}
+      />
+
+      {pesanLokasi && (
+        <View>
+          <Text>{pesanLokasi}</Text>
+        </View>
+      )}
 
       {hasilPencarian.map((kota) => (
         <TouchableOpacity
@@ -119,19 +169,26 @@ export default function HalamanUtama() {
 
           <Button
             title="Coba Lagi"
-            onPress={() => kotaTerpilih && pilihKota(kotaTerpilih)}
+            onPress={() =>
+              kotaTerpilih && pilihKota(kotaTerpilih)
+            }
           />
         </View>
       )}
 
-      {cuaca && kualitasUdara && kotaTerpilih && !sedangMemuat && (
-        <WeatherCard
-          kota={kotaTerpilih.name}
-          suhu={cuaca.saatIni.suhu}
-          tingkatAQI={konversiTingkatAQI(kualitasUdara.indeksAQI)}
-          indeksAQI={kualitasUdara.indeksAQI}
-        />
-      )}
+      {cuaca &&
+        kualitasUdara &&
+        kotaTerpilih &&
+        !sedangMemuat && (
+          <WeatherCard
+            kota={kotaTerpilih.name}
+            suhu={cuaca.saatIni.suhu}
+            tingkatAQI={konversiTingkatAQI(
+              kualitasUdara.indeksAQI,
+            )}
+            indeksAQI={kualitasUdara.indeksAQI}
+          />
+        )}
 
       {cuaca && (
         <Text
@@ -140,8 +197,8 @@ export default function HalamanUtama() {
             color: "#888",
           }}
         >
-          Kondisi: {labelKodeCuaca(cuaca.saatIni.kodeCuaca)} • Angin{" "}
-          {cuaca.saatIni.kecepatanAngin} km/j
+          Kondisi: {labelKodeCuaca(cuaca.saatIni.kodeCuaca)} •
+          Angin {cuaca.saatIni.kecepatanAngin} km/j
         </Text>
       )}
 
