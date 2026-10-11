@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 
 import {
   mintaIzinLokasi,
@@ -14,6 +19,8 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { router, useFocusEffect } from "expo-router";
 
 import AtribusiCuaca from "../../../components/AtribusiCuaca";
 import SearchBox from "../../components/SearchBox";
@@ -32,15 +39,21 @@ import {
   DataCuacaLengkap,
   DataKualitasUdara,
 } from "../../types/weather";
-import { router } from "expo-router";
+
+import { KotaFavorit } from "../../types/favorit";
+import { ambilSemuaFavorit } from "../../services/favoritStorage";
 
 export default function HalamanUtama() {
   const [teksCari, setTeksCari] = useState("");
-  const [hasilPencarian, setHasilPencarian] = useState<HasilGeocoding[]>([]);
+  const [hasilPencarian, setHasilPencarian] = useState<
+    HasilGeocoding[]
+  >([]);
+
   const [kotaTerpilih, setKotaTerpilih] =
     useState<HasilGeocoding | null>(null);
 
-  const [cuaca, setCuaca] = useState<DataCuacaLengkap | null>(null);
+  const [cuaca, setCuaca] =
+    useState<DataCuacaLengkap | null>(null);
 
   const [kualitasUdara, setKualitasUdara] =
     useState<DataKualitasUdara | null>(null);
@@ -49,10 +62,44 @@ export default function HalamanUtama() {
   const [pesanError, setPesanError] = useState<string | null>(null);
   const [pesanLokasi, setPesanLokasi] = useState<string | null>(null);
 
+  // Menyimpan daftar kota favorit
+  const [daftarFavorit, setDaftarFavorit] = useState<KotaFavorit[]>([]);
+
   const teksTertunda = useDebounce(teksCari, 500);
 
   // Mencegah race condition saat request sebelumnya selesai lebih lambat.
   const requestIdRef = useRef(0);
+
+  // Memuat ulang daftar favorit ketika tab Beranda aktif kembali.
+  useFocusEffect(
+    useCallback(() => {
+      let masihAktif = true;
+
+      ambilSemuaFavorit()
+        .then((favorit) => {
+          if (masihAktif) {
+            setDaftarFavorit(favorit);
+          }
+        })
+        .catch((error) => {
+          console.error(
+            "Gagal mengambil data favorit:",
+            error,
+          );
+        });
+
+      return () => {
+        masihAktif = false;
+      };
+    }, []),
+  );
+
+  // Memeriksa apakah kota yang dipilih sudah menjadi favorit.
+  const sudahFavorit =
+    kotaTerpilih !== null &&
+    daftarFavorit.some(
+      (favorit) => favorit.id === kotaTerpilih.id,
+    );
 
   useEffect(() => {
     if (teksTertunda.trim().length === 0) {
@@ -101,7 +148,7 @@ export default function HalamanUtama() {
     }
   }
 
-  // Menggunakan lokasi perangkat saat ini
+  // Menggunakan lokasi perangkat saat ini.
   async function gunakanLokasiSaatIni() {
     const status = await mintaIzinLokasi();
 
@@ -181,28 +228,39 @@ export default function HalamanUtama() {
         kualitasUdara &&
         kotaTerpilih &&
         !sedangMemuat && (
-         <>
-<WeatherCard
-kota={kotaTerpilih.name}
-suhu={cuaca.saatIni.suhu}
-tingkatAQI={konversiTingkatAQI(kualitasUdara.indeksAQI)}
-/>
-<Button
-title="Tambahkan ke Favorit"
-onPress={() =>
-router.push({
-pathname: "/tambah-favorit",
-params: {
-id: String(kotaTerpilih.id),
-nama: kotaTerpilih.name,
-lat: String(kotaTerpilih.latitude),
-lon: String(kotaTerpilih.longitude),
-},
-})
-}
-/>
-</>
-)}
+          <>
+            <WeatherCard
+              kota={kotaTerpilih.name}
+              suhu={cuaca.saatIni.suhu}
+              tingkatAQI={konversiTingkatAQI(
+                kualitasUdara.indeksAQI,
+              )}
+            />
+
+            {!sudahFavorit && (
+              <Button
+                title="Tambahkan ke Favorit"
+                onPress={() =>
+                  router.push({
+                    pathname: "/tambah-favorit",
+                    params: {
+                      id: String(kotaTerpilih.id),
+                      nama: kotaTerpilih.name,
+                      lat: String(kotaTerpilih.latitude),
+                      lon: String(kotaTerpilih.longitude),
+                    },
+                  })
+                }
+              />
+            )}
+
+            {sudahFavorit && (
+              <Text style={{ color: "green" }}>
+                Kota ini sudah tersimpan di favorit.
+              </Text>
+            )}
+          </>
+        )}
 
       {cuaca && (
         <Text
