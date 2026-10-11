@@ -1,4 +1,3 @@
-// components/RiwayatList.tsx
 import { View, Text } from "react-native";
 import { Link } from "expo-router";
 interface RiwayatListProps {

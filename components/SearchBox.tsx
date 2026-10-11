@@ -1,4 +1,3 @@
-// components/SearchBox.tsx
 import { useState } from "react";
 import { View, TextInput, Button } from "react-native";
 
@@ -19,8 +18,7 @@ export default function SearchBox({ onCari }: SearchBoxProps) {
       <Button
         title="Cari"
         onPress={() => onCari(teks)}
-        accessibilityLabel="Cari cuaca untuk kota yang dimasukkan"
-      />
+        accessibilityLabel="Cari cuaca untuk kota yang dimasukkan"/>
     </View>
   );
 }

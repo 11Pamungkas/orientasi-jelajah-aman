@@ -1,4 +1,3 @@
-// src/constants/styles.ts
 export const typeScale = {
   judul: 24,
   subjudul: 16,
