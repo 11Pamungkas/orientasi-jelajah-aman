@@ -15,6 +15,7 @@ interface BarisCache {
   cuaca_json: string;
   aqi_json: string;
   disimpan_pada: number;
+  jumlah_dibuka?: number;
 }
 
 type BarisRingkasan = Omit<BarisCache, "cuaca_json" | "aqi_json">;

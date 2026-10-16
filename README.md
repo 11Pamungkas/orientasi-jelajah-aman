@@ -54,3 +54,8 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Penjelasan Status Data & Offline Caching
+
+Cache-segar adalah data tersimpan lokal yang umurnya masih dalam batas TTL (< 30 menit) sehingga langsung digunakan tanpa request internet. Cache-basi adalah data lokal yang sudah melampaui batas TTL namun tetap disajikan sebagai cadangan ketika perangkat tidak terhubung ke internet. First-run offline terjadi saat aplikasi pertama kali dijalankan dalam keadaan tanpa internet dan belum memiliki data tersimpan sama sekali di database lokal. Label status data sangat penting bagi pengguna untuk memberikan transparansi mengenai aktualitas dan keandalan informasi cuaca yang sedang mereka lihat.
+

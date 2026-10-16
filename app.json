@@ -7,11 +7,9 @@
     "icon": "./assets/images/icon.png",
     "scheme": "orientasijelajahaman",
     "userInterfaceStyle": "automatic",
-
     "ios": {
       "icon": "./assets/expo.icon"
     },
-
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -21,12 +19,10 @@
       },
       "predictiveBackGestureEnabled": false
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-
     "plugins": [
       "expo-router",
       [
@@ -42,9 +38,9 @@
         {
           "locationWhenInUsePermission": "Jelajah Aman menggunakan lokasi Anda untuk menampilkan cuaca di kota terdekat."
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
