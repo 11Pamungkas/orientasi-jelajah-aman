@@ -70,7 +70,7 @@ export async function daftarKotaTersimpan(): Promise<RingkasanKotaTersimpan[]> {
   const db = await ambilDatabase();
   const semua = await db.getAllAsync<BarisRingkasan>(
     `SELECT kunci, kota_id, nama_kota, latitude, longitude, disimpan_pada
-FROM cache_cuaca ORDER BY disimpan_pada DESC LIMIT 5`,
+FROM cache_cuaca ORDER BY disimpan_pada DESC LIMIT 10`,
   );
   return semua.map((b) => ({
     kunci: b.kunci,
@@ -80,6 +80,31 @@ FROM cache_cuaca ORDER BY disimpan_pada DESC LIMIT 5`,
     longitude: b.longitude,
     disimpanPada: b.disimpan_pada,
   }));
+}
+
+/**
+ * Menghapus data cache hanya untuk satu kota tertentu berdasarkan kunci koordinat.
+ * Tidak menghapus data favorit maupun riwayat pencarian.
+ */
+export async function hapusCacheKota(kunci: string): Promise<boolean> {
+  try {
+    const db = await ambilDatabase();
+    const hasil = await db.runAsync("DELETE FROM cache_cuaca WHERE kunci = ?", [kunci]);
+    return (hasil.changes ?? 0) > 0;
+  } catch (error) {
+    console.error("Gagal menghapus cache kota:", error);
+    return false;
+  }
+}
+
+/**
+ * Menghapus data cache hanya untuk satu kota tertentu berdasarkan koordinat.
+ */
+export async function hapusCacheKotaByCoords(
+  latitude: number,
+  longitude: number
+): Promise<boolean> {
+  return hapusCacheKota(buatKunci(latitude, longitude));
 }
 
 // Invalidation otomatis: buang cache yang lebih tua dari batas umur
